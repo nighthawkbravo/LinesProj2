@@ -1,4 +1,0 @@
-config BR2_PACKAGE_LED-PUZZLE
-	bool "led-puzzle"
-	help
-		An LED game.

@@ -1,0 +1,4 @@
+config BR2_PACKAGE_PUZZLE
+	bool "puzzle"
+	help
+		An LED game.

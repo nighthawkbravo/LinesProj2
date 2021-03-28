@@ -4,7 +4,7 @@ CROSS_COMPILE ?= $(ARCH)-none-linux-gnu-
 .PHONY: clean
 
 CC=$(CROSS_COMPILE)gcc
-OBJS := puzzle.o
+OBJS := main.o
 puzzle: $(OBJS)
 	$(CC) -o puzzle $(CFLAGS) $(LDFLAGS) $(OBJS) -l ncurses
 $(OBJS) : %.o : %.c
