@@ -5,7 +5,6 @@ BR_DL=${BR_FILE}
 set -e
 if [ ! -f ${BR_DL} ] || ! ( bzip2 -q -t ${BR_DL}); then
   (  
-     cd ..
      rm -f ${BR_FILE}
      wget https://buildroot.org/downloads/${BR_FILE}
   )
