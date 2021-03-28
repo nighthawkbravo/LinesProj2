@@ -12,7 +12,9 @@ if [ ! -f ${BR_DL} ] || ! ( bzip2 -q -t ${BR_DL}); then
 fi
 tar -xjf ${BR_DL}
 cp BR_config ${BR_NAME}/.config
-cd buildroot-2021.02
+cp -vr package/* ${BR_NAME}/package/
+cd ${BR_NAME}
+
 for i in ../patches/* ; do
    patch -p1 < $i
 done
