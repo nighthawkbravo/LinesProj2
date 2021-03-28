@@ -5,12 +5,14 @@ CROSS_COMPILE ?= $(ARCH)-none-linux-gnu-
 
 CC=$(CROSS_COMPILE)gcc
 all: puzzle
-
+LIBS := gpiod
 OBJS := main.o
-puzzle: $(OBJS)
-	$(CC) -o puzzle $(CFLAGS) $(LDFLAGS) $(OBJS) -l ncurses
+
 $(OBJS) : %.o : %.c
 	$(CC) -c $(CFLAGS) $< -o $@
+
+puzzle: $(OBJS)
+	$(CC) -o puzzle $(CFLAGS) $(LDFLAGS) $(OBJS) -l $(LIBS)
 
 clean:
 	rm -f $(OBJS) puzzle
