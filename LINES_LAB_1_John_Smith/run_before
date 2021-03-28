@@ -1,0 +1,4 @@
+#!/bin/bash
+(
+  # At the moment there is nothing to be run before the emulation is started...
+)
