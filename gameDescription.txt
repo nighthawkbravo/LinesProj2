@@ -1,0 +1,22 @@
+
+I will make a game where the goal is to turn all of the LED's off. 
+LED's are switched on and off by pressing buttons. 
+The player will have to find an order of pressing the buttons to turn off all of the LED's.
+ 
+The game will be possible to complete because when the game is run, a random sequence of the buttons will be virtually pressed. 
+This will result in some combination of on and off LED's.
+
+
+----ALSO----
+
+In the qemu, there are two .py files that if you type them, their program will start running.
+
+They are located in "buildroot-2021.02/output/target/usr/bin/"
+
+
+switch0_read_irq.py
+
+and
+
+# I believe this is set to 18 for now.
+button13_read_irq.py 
