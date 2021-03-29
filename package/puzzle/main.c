@@ -6,11 +6,13 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 typedef struct led_t
 {
 	int line;
 	int val;
+	struct gpiod_line* line_fd;
 } led_t;
 
 typedef struct button_t
@@ -22,11 +24,12 @@ typedef struct button_t
 	
 static const char* g_controller = "gpiochip0";
 static const char* g_consumer = "puzzle";
+static struct gpiod_chip* g_gpio_chip;
 static const long g_ignore_duplicate_event_ms = 2000L;
 static long g_previous_event_time_ms = 0L;
 static int g_previous_button = -1;
 
-static struct led_t leds[] = { {24,0}, {25,0}, {26,0}, {27,0}, {28,0}, {29,0}, {30,0}, {31,0} }; 
+static struct led_t leds[] = { {24,0,NULL}, {25,0,NULL}, {26,0,NULL}, {27,0,NULL}, {28,0,NULL}, {29,0,NULL}, {30,0,NULL}, {31,0,NULL} }; 
 unsigned const int leds_len = sizeof(leds) / sizeof(led_t);
 
 static struct button_t buttons[] = { 
@@ -45,7 +48,7 @@ static long get_time_millis()
 
 static void set_line(led_t* l, int value)
 {
-	if(gpiod_ctxless_set_value(g_controller, l->line, value, false, g_consumer,  NULL, NULL))
+	if(gpiod_line_set_value(l->line_fd, value))
 	{
 		fprintf (stderr, "Couldn't set LED line %d - %s\n", l->line, strerror(errno));
 		exit (EXIT_FAILURE);
@@ -55,7 +58,7 @@ static void set_line(led_t* l, int value)
 
 static void toggle_line(led_t* l)
 {
-	if(gpiod_ctxless_set_value(g_controller, l->line, l->val, false, g_consumer,  NULL, NULL))
+	if(gpiod_line_set_value(l->line_fd, l->val))
 	{
 		fprintf (stderr, "Couldn't toggle LED line %d - %s\n", l->line, strerror(errno));
 		exit (EXIT_FAILURE);
@@ -95,7 +98,7 @@ static void init_button(button_t *btn)
 	btn->my_leds = malloc(sizeof(led_t*) * btn->led_len);
 	for (int i = 0; i < btn->led_len; )
 	{
-		int random_led = rand() % 7;
+		int random_led = rand() % leds_len;
 		if (is_led_unique(btn->my_leds, &leds[random_led], i))
 	       	{
 			btn->my_leds[i] = &leds[random_led];
@@ -104,14 +107,31 @@ static void init_button(button_t *btn)
 	}
 }
 
+void cycle_all_lines(int value)
+{
+	for(int i=0; i<leds_len;++i) {
+		set_line(&leds[i], value);
+	}
+}
+
+static void init_leds()
+{
+	for(int i=0; i<leds_len;++i) {
+		leds[i].line_fd = gpiod_chip_get_line(g_gpio_chip, leds[i].line);
+		gpiod_line_request_output(leds[i].line_fd, g_consumer, 0);
+	}
+}
+
 static void init()
 {
+	g_gpio_chip = gpiod_chip_open_by_name(g_controller);
+	init_leds();
+
 	srand(time(0));
 
 	// cycle all leds
-	for(int i=0; i<leds_len;++i) {
-		set_line(&leds[i], 0);
-	}
+	//
+	// cycle_all_lines(0);
 
 	// assign leds to buttons
 	for (int i = 0; i < button_len; ++i) {
