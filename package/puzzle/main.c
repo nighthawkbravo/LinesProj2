@@ -22,10 +22,36 @@ typedef struct button_t
 	
 static const char* g_controller = "gpiochip0";
 static const char* g_consumer = "puzzle";
+static const long g_ignore_duplicate_event_ms = 2000L;
+static long g_previous_event_time_ms = 0L;
+static int g_previous_button = -1;
 
 static struct led_t leds[] = { {24,0}, {25,0}, {26,0}, {27,0}, {28,0}, {29,0}, {30,0}, {31,0} }; 
-static struct button_t buttons[] = { {12, 0, NULL}, {13, 0, NULL}, {14, 0, NULL}, {15, 0, NULL}, {16, 0, NULL}, {17, 0, NULL} };
-unsigned const int button_len = 6;
+unsigned const int leds_len = sizeof(leds) / sizeof(led_t);
+
+static struct button_t buttons[] = { 
+	{12, 0, NULL}, {13, 0, NULL}, {14, 0, NULL}, {15, 0, NULL}, 
+	{16, 0, NULL}, {17, 0, NULL}, {18, 0, NULL}, {19, 0, NULL},
+	{20, 0, NULL}, {21, 0, NULL}, {22, 0, NULL}, {23, 0, NULL}
+};
+unsigned const int button_len = sizeof(buttons) / sizeof(button_t);
+
+static long get_time_millis()
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	return (long) (ts.tv_sec*1e3 + ts.tv_nsec/1e6);
+}
+
+static void set_line(led_t* l, int value)
+{
+	if(gpiod_ctxless_set_value(g_controller, l->line, value, false, g_consumer,  NULL, NULL))
+	{
+		fprintf (stderr, "Couldn't set LED line %d - %s\n", l->line, strerror(errno));
+		exit (EXIT_FAILURE);
+	}
+	l->val = value;
+}
 
 static void toggle_line(led_t* l)
 {
@@ -39,6 +65,7 @@ static void toggle_line(led_t* l)
 
 static void toggle_my_leds(int id)
 {	
+	fprintf(stderr, "%d ", id);
 	for(int i=0;i<button_len;++i)
 	{
 		button_t *btn = &buttons[i];
@@ -47,7 +74,7 @@ static void toggle_my_leds(int id)
 			for(int j=0; j < btn->led_len; ++j) {
 				toggle_line(btn->my_leds[j]);
 			}
-
+			break;
 		}
 	}
 }
@@ -80,11 +107,10 @@ static void init_button(button_t *btn)
 static void init()
 {
 	srand(time(0));
-	unsigned const int len = sizeof(leds) / sizeof(led_t);
 
-	// reset all leds
-	for(int i=0; i<len;++i) {
-		toggle_line(&leds[i]);
+	// cycle all leds
+	for(int i=0; i<leds_len;++i) {
+		set_line(&leds[i], 0);
 	}
 
 	// assign leds to buttons
@@ -92,41 +118,49 @@ static void init()
 		init_button(&buttons[i]);
 	}
 
+	/*
 	// random button presses
-	fprintf(stderr, "Buttons: ");
-	for (int i = 0; i < (rand() % 6)+5; ++i) {
+	fprintf(stderr, "Cipher: ");
+	for (int i = 0; i < (rand() % 3)+4; ++i) {
 		int button_index = (rand() % 6)+12;
 		toggle_my_leds(button_index);
-		fprintf(stderr, "%d ", button_index);
 	}
 	fprintf(stderr, "\n");
+	*/
+}
+
+static void on_edge_event(int event, unsigned int offset)
+{
+	const long tm_ms = get_time_millis();
+	if ((tm_ms - g_previous_event_time_ms) < g_ignore_duplicate_event_ms && g_previous_button == offset)
+	{
+		fprintf(stderr, ".");
+	}
+	else
+       	{
+		g_previous_event_time_ms = tm_ms;
+		g_previous_button = offset;
+		toggle_my_leds(offset);
+	}
 }
 
 // Edge detection event callback
 // 
 static int falling_edge_event_multiple_offsets(int event, unsigned int offset, const struct timespec *timestamp, void *unused)
 {
-	struct timespec my_ts;
-	struct tm*      my_tm;
-	char*           edge_event;
-	clock_gettime(CLOCK_REALTIME, &my_ts);
-	my_tm = localtime(&my_ts.tv_sec);
 	switch (event)
 	{
 		case GPIOD_CTXLESS_EVENT_CB_FALLING_EDGE:
-			edge_event = "Falling edge";
+			on_edge_event(event, offset);
 			break;
+
 		case GPIOD_CTXLESS_EVENT_CB_RISING_EDGE:
-			edge_event = " Rising edge";
-			// HERE is made the toggling.
-			toggle_my_leds(offset);
+			on_edge_event(event, offset);
 			break;
+
 		case GPIOD_CTXLESS_EVENT_CB_TIMEOUT:
-			edge_event = "    Timed out";
 			break;
 	}
-	fprintf(stderr, "%02d:%02d:%02d|%s, line: %d\n", 
-		my_tm->tm_hour, my_tm->tm_min, my_tm->tm_sec, edge_event, offset);
 	return GPIOD_CTXLESS_EVENT_CB_RET_OK;	 
 }
 
