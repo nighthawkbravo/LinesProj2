@@ -1,4 +1,5 @@
 config BR2_PACKAGE_PUZZLE
 	bool "puzzle"
+	select BR2_PACKAGE_LIBGPIOD
 	help
 		An LED game.
