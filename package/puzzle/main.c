@@ -131,7 +131,7 @@ static void init()
 
 	// cycle all leds
 	//
-	// cycle_all_lines(0);
+	cycle_all_lines(0);
 
 	// assign leds to buttons
 	for (int i = 0; i < button_len; ++i) {
