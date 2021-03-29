@@ -58,12 +58,12 @@ static void set_line(led_t* l, int value)
 
 static void toggle_line(led_t* l)
 {
+	l->val = 1 - l->val;
 	if(gpiod_line_set_value(l->line_fd, l->val))
 	{
 		fprintf (stderr, "Couldn't toggle LED line %d - %s\n", l->line, strerror(errno));
 		exit (EXIT_FAILURE);
 	}
-	l->val = 1 - l->val;
 }
 
 static void toggle_my_leds(int id)
@@ -138,7 +138,6 @@ static void init()
 		init_button(&buttons[i]);
 	}
 
-	/*
 	// random button presses
 	fprintf(stderr, "Cipher: ");
 	for (int i = 0; i < (rand() % 3)+4; ++i) {
@@ -146,7 +145,6 @@ static void init()
 		toggle_my_leds(button_index);
 	}
 	fprintf(stderr, "\n");
-	*/
 }
 
 static void on_edge_event(int event, unsigned int offset)
