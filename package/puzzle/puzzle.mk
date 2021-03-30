@@ -6,7 +6,7 @@ PUZZLE_SITE_METHOD:=local
 
 
 define PUZZLE_BUILD_CMDS
-        $(MAKE) CC="$(TARGET_CC)" LD="$(TARGET_LD)" -C $(@D) all
+	$(MAKE) $(TARGET_CONFIGURE_OPTS) -C $(@D) all
 endef
 
 define PUZZLE_INSTALL_TARGET_CMDS
